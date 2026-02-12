@@ -1,45 +1,23 @@
 import { useEffect, useRef, useState, memo, useCallback } from 'react';
 import L from 'leaflet';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, useMapEvents, LayersControl, Circle } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, useMapEvents, LayersControl, Circle, LayerGroup } from 'react-leaflet';
 import { Button } from './ui/button';
 import { Play, Pause, Square, Wind, Waves, Thermometer, Eye } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
+import type { WeatherInfo, EnhancedLeafletMapProps as LeafletMapProps } from '@/types';
 
-// Weather data interface
-interface WeatherInfo {
-  position: [number, number];
-  weather: {
-    wind_speed: number;
-    wind_direction: number;
-    wave_height: number;
-    wave_period: number;
-    temperature: number;
-    visibility: number;
-    weather_condition: string;
-    humidity: number;
-    pressure: number;
-  };
-}
-
-// Enhanced props interface
-export interface LeafletMapProps {
-  route: [number, number][] | null;
-  weatherForecast?: WeatherInfo[];
-  showWeather: boolean;
-  startPort: [number, number] | null;
-  endPort: [number, number] | null;
-  isSelectingLocation: 'start' | 'end' | null;
-  onLocationSelect: (location: [number, number]) => void;
-  zoomToLocation: [number, number] | null;
-  searchResults: [number, number][];
-  defaultCenter: [number, number];
-  defaultZoom: number;
-}
+// Fix Leaflet default icon paths broken by webpack
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+});
 
 // Weather overlay component
 function WeatherOverlay({ weatherData }: { weatherData: WeatherInfo[] }) {
   return (
-    <>
+    <LayerGroup>
       {weatherData.map((info, index) => {
         const [lon, lat] = info.position;
         const weather = info.weather;
@@ -101,7 +79,7 @@ function WeatherOverlay({ weatherData }: { weatherData: WeatherInfo[] }) {
           </Circle>
         );
       })}
-    </>
+    </LayerGroup>
   );
 }
 
@@ -292,6 +270,12 @@ const EnhancedLeafletMap: React.FC<LeafletMapProps> = memo(({
   
   const animationRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number>(0);
+  const currentStepRef = useRef<number>(0);
+  const animationSpeedRef = useRef<number>(1);
+  
+  // Keep refs in sync with state
+  useEffect(() => { currentStepRef.current = currentStep; }, [currentStep]);
+  useEffect(() => { animationSpeedRef.current = animationSpeed; }, [animationSpeed]);
   
   // Animation logic
   const startAnimation = useCallback(() => {
@@ -301,6 +285,7 @@ const EnhancedLeafletMap: React.FC<LeafletMapProps> = memo(({
       setShipPosition([route[0][0], route[0][1]]);
       setTraveledPath([[route[0][0], route[0][1]]]);
       setCurrentStep(0);
+      currentStepRef.current = 0;
       setProgress(0);
       lastTimeRef.current = performance.now();
       
@@ -310,13 +295,14 @@ const EnhancedLeafletMap: React.FC<LeafletMapProps> = memo(({
         }
         
         const deltaTime = currentTime - lastTimeRef.current;
-        const adjustedDelta = deltaTime * animationSpeed;
+        const adjustedDelta = deltaTime * animationSpeedRef.current;
         
         setProgress(prev => {
-          const newProgress = prev + adjustedDelta / 100; // Adjust speed here
+          const newProgress = prev + adjustedDelta / 100;
           
-          if (currentStep < route.length - 1 && newProgress >= 1) {
+          if (currentStepRef.current < route.length - 1 && newProgress >= 1) {
             setCurrentStep(prev => prev + 1);
+            currentStepRef.current += 1;
             return 0;
           }
           
@@ -325,7 +311,7 @@ const EnhancedLeafletMap: React.FC<LeafletMapProps> = memo(({
         
         lastTimeRef.current = currentTime;
         
-        if (currentStep < route.length - 1) {
+        if (currentStepRef.current < route.length - 1) {
           animationRef.current = requestAnimationFrame(animate);
         } else {
           setIsAnimating(false);
@@ -334,7 +320,7 @@ const EnhancedLeafletMap: React.FC<LeafletMapProps> = memo(({
       
       animationRef.current = requestAnimationFrame(animate);
     }
-  }, [route, animationSpeed, currentStep]);
+  }, [route]);
   
   const pauseAnimation = useCallback(() => {
     if (animationRef.current) {
@@ -398,12 +384,10 @@ const EnhancedLeafletMap: React.FC<LeafletMapProps> = memo(({
   // Resume animation after pause
   useEffect(() => {
     if (isPaused && !isAnimating) {
-      // Animation is paused, don't restart
       return;
     }
     
     if (isAnimating && !isPaused && !animationRef.current) {
-      // Resume animation
       lastTimeRef.current = performance.now();
       
       const animate = (currentTime: number) => {
@@ -412,13 +396,14 @@ const EnhancedLeafletMap: React.FC<LeafletMapProps> = memo(({
         }
         
         const deltaTime = currentTime - lastTimeRef.current;
-        const adjustedDelta = deltaTime * animationSpeed;
+        const adjustedDelta = deltaTime * animationSpeedRef.current;
         
         setProgress(prev => {
           const newProgress = prev + adjustedDelta / 100;
           
-          if (currentStep < (route?.length || 0) - 1 && newProgress >= 1) {
+          if (currentStepRef.current < (route?.length || 0) - 1 && newProgress >= 1) {
             setCurrentStep(prev => prev + 1);
+            currentStepRef.current += 1;
             return 0;
           }
           
@@ -427,7 +412,7 @@ const EnhancedLeafletMap: React.FC<LeafletMapProps> = memo(({
         
         lastTimeRef.current = currentTime;
         
-        if (currentStep < (route?.length || 0) - 1) {
+        if (currentStepRef.current < (route?.length || 0) - 1) {
           animationRef.current = requestAnimationFrame(animate);
         } else {
           setIsAnimating(false);
@@ -436,7 +421,7 @@ const EnhancedLeafletMap: React.FC<LeafletMapProps> = memo(({
       
       animationRef.current = requestAnimationFrame(animate);
     }
-  }, [isPaused, isAnimating, animationSpeed, currentStep, route?.length]);
+  }, [isPaused, isAnimating, route?.length]);
   
   // Clean up animation on unmount
   useEffect(() => {
@@ -493,36 +478,33 @@ const EnhancedLeafletMap: React.FC<LeafletMapProps> = memo(({
               attribution='&copy; <a href="https://opentopomap.org">OpenTopoMap</a> contributors'
             />
           </LayersControl.BaseLayer>
-          
-          {showWeather && weatherForecast.length > 0 && (
-            <LayersControl.Overlay checked name="Weather Conditions">
-              <WeatherOverlay weatherData={weatherForecast} />
-            </LayersControl.Overlay>
-          )}
-          
-          {route && (
-            <LayersControl.Overlay checked name="Planned Route">
-              <Polyline 
-                positions={route.map(([lon, lat]) => [lat, lon])} 
-                color="#3b82f6" 
-                weight={3} 
-                opacity={0.7}
-                dashArray="10, 5"
-              />
-            </LayersControl.Overlay>
-          )}
-          
-          {traveledPath.length > 1 && (
-            <LayersControl.Overlay checked name="Traveled Path">
-              <Polyline 
-                positions={traveledPath.map(([lon, lat]) => [lat, lon])} 
-                color="#10B981" 
-                weight={4}
-                opacity={0.9}
-              />
-            </LayersControl.Overlay>
-          )}
         </LayersControl>
+        
+        {/* Weather overlay */}
+        {showWeather && weatherForecast.length > 0 && (
+          <WeatherOverlay weatherData={weatherForecast} />
+        )}
+        
+        {/* Route polyline */}
+        {route && (
+          <Polyline 
+            positions={route.map(([lon, lat]) => [lat, lon])} 
+            color="#3b82f6" 
+            weight={3} 
+            opacity={0.7}
+            dashArray="10, 5"
+          />
+        )}
+        
+        {/* Traveled path */}
+        {traveledPath.length > 1 && (
+          <Polyline 
+            positions={traveledPath.map(([lon, lat]) => [lat, lon])} 
+            color="#10B981" 
+            weight={4}
+            opacity={0.9}
+          />
+        )}
         
         {/* Port markers */}
         {startPort && (

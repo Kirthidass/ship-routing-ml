@@ -6,22 +6,7 @@ import { Switch } from './ui/switch'
 import { Label } from './ui/label'
 import { Button } from './ui/button'
 import EnhancedRouteForm from './EnhancedRouteForm'
-
-// Weather data interface
-interface WeatherInfo {
-  position: [number, number];
-  weather: {
-    wind_speed: number;
-    wind_direction: number;
-    wave_height: number;
-    wave_period: number;
-    temperature: number;
-    visibility: number;
-    weather_condition: string;
-    humidity: number;
-    pressure: number;
-  };
-}
+import type { WeatherInfo } from '@/types'
 
 interface EnhancedSidebarProps {
   isNavOpen: boolean

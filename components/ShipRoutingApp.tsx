@@ -91,6 +91,7 @@ export default function ShipRoutingApp() {
           isSelectingLocation={isSelectingLocation}
           onLocationSelect={handleLocationSelect}
           zoomToLocation={zoomToLocation}
+          searchResults={[]}
           defaultCenter={DEFAULT_CENTER}
           defaultZoom={DEFAULT_ZOOM}
         />

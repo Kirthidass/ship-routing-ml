@@ -45,7 +45,7 @@ export default function SearchBar({ onLocationSelect, onSearch, onConfirmLocatio
     setSuggestions([]);
   }
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       handleSearch();
     }
@@ -64,7 +64,7 @@ export default function SearchBar({ onLocationSelect, onSearch, onConfirmLocatio
             placeholder="Search for a port or city..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyDown}
             className="w-full border-0 focus:ring-0"
           />
           <Button onClick={handleSearch} className="m-1" disabled={isLoading}>

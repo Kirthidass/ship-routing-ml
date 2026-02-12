@@ -4,37 +4,9 @@ import { useState, useCallback, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import EnhancedSidebar from './EnhancedSidebar';
 import SearchBar from './SearchBar';
+import type { WeatherInfo, EnhancedLeafletMapProps } from '@/types';
 
-// Weather data interface
-interface WeatherInfo {
-  position: [number, number];
-  weather: {
-    wind_speed: number;
-    wind_direction: number;
-    wave_height: number;
-    wave_period: number;
-    temperature: number;
-    visibility: number;
-    weather_condition: string;
-    humidity: number;
-    pressure: number;
-  };
-}
-
-// Enhanced LeafletMap props interface
-interface EnhancedLeafletMapProps {
-  route: [number, number][] | null;
-  weatherForecast?: WeatherInfo[];
-  showWeather: boolean;
-  startPort: [number, number] | null;
-  endPort: [number, number] | null;
-  isSelectingLocation: 'start' | 'end' | null;
-  onLocationSelect: (location: [number, number]) => void;
-  zoomToLocation: [number, number] | null;
-  searchResults: [number, number][];
-  defaultCenter: [number, number];
-  defaultZoom: number;
-}
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
 
 // Dynamically import the enhanced LeafletMap component
 const EnhancedLeafletMap = dynamic<EnhancedLeafletMapProps>(() => import('./EnhancedLeafletMap'), {
@@ -69,7 +41,7 @@ export default function EnhancedShipRoutingApp() {
   useEffect(() => {
     const checkBackendStatus = async () => {
       try {
-        const response = await fetch('http://localhost:5000/health');
+        const response = await fetch(`${BACKEND_URL}/health`);
         if (response.ok) {
           setBackendStatus('connected');
           console.log('✅ Backend connected successfully');

@@ -21,44 +21,9 @@ import { DateTimePicker } from "./ui/date-time-picker"
 import { Switch } from "./ui/switch"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
 import { Badge } from "./ui/badge"
+import type { WeatherInfo, RouteOptimizationResult, ErrorResponse, ModelStatus } from '@/types'
 
-interface WeatherInfo {
-  position: [number, number];
-  weather: {
-    wind_speed: number;
-    wind_direction: number;
-    wave_height: number;
-    wave_period: number;
-    temperature: number;
-    visibility: number;
-    weather_condition: string;
-    humidity: number;
-    pressure: number;
-  };
-}
-
-// Updated interface to match the full backend response
-interface RouteOptimizationResult {
-  optimized_route: [number, number][];
-  total_distance_km: number;
-  travel_time_hours: number;
-  weather_forecast?: WeatherInfo[];
-  route_method: 'ML' | 'Physics-based';
-  waypoints_count: number;
-  estimated_savings_km: number;
-  direct_distance_km: number;
-}
-
-// Interface for a JSON error response from the backend
-interface ErrorResponse {
-  error: string;
-}
-
-interface ModelStatus {
-  ml_model_ready: boolean;
-  weather_service_ready: boolean;
-  fallback_available: boolean;
-}
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
 
 interface RouteFormProps {
   setSelectedRoute: (route: [number, number][]) => void
@@ -90,7 +55,7 @@ export default function EnhancedRouteForm({
   useEffect(() => {
     const checkModelStatus = async () => {
       try {
-        const response = await fetch('http://localhost:5000/model_status')
+        const response = await fetch(`${BACKEND_URL}/model_status`)
         if (response.ok) {
           const status = await response.json()
           setModelStatus(status)
@@ -180,7 +145,7 @@ export default function EnhancedRouteForm({
       };
       console.log('Sending request with payload:', payload);
 
-      const response = await fetch('http://localhost:5000/optimize_route', {
+      const response = await fetch(`${BACKEND_URL}/optimize_route`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -138,7 +138,7 @@ const LeafletMap: React.FC<LeafletMapProps> = memo(({
         zoom={defaultZoom}
         style={{ height: '100%', width: '100%' }}
         className="z-0"
-        whenCreated={mapInstance => { mapRef.current = mapInstance; }}
+        ref={(instance) => { if (instance) mapRef.current = instance; }}
       >
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

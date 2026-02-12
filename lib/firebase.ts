@@ -3,16 +3,14 @@ import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getFunctions } from "firebase/functions";
 
-// Your web app's Firebase configuration
-// IMPORTANT: In a production application, these keys should be stored securely,
-// for example, in environment variables.
+// Firebase configuration loaded from environment variables
 const firebaseConfig = {
-  apiKey: "AIzaSyAgJM9aIaT9Ye33XHu39vMMnuAqb2o9xC8",
-  authDomain: "ship-routing-app.firebaseapp.com",
-  projectId: "ship-routing-app",
-  storageBucket: "ship-routing-app.appspot.com",
-  messagingSenderId: "179380437829",
-  appId: "1:179380437829:web:a9f4c24ead9c717a50742c"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
 
 // Initialize Firebase
